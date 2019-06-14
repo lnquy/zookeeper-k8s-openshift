@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-DOCKER_ORG           ?= engapa
+DOCKER_ORG           ?= lnquy
 DOCKER_IMAGE         ?= zookeeper
 
 ZK_VERSION           ?= 3.4.14

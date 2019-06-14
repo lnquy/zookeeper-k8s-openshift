@@ -8,8 +8,10 @@ for dir in $ZOO_CONF_DIR $ZK_dataDir $ZK_dataLogDir;do
     mkdir -p $dir
   else
     # Ensure that we can write on directories (possible persistent volumes)
+    me=$(whoami)
     echo "Ensuring permission for directory $dir ..."
-    sudo chown -R $ZOO_USER:$ZOO_GROUP $dir
+    echo "whoami: $me - $(id $me)"
+    chown -R $ZOO_USER:$ZOO_GROUP $dir
   fi
 done
 

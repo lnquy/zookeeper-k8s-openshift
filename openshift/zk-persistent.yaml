@@ -1,22 +1,22 @@
 kind: Template
 apiVersion: v1
 metadata:
-  name: zk-persistent
+  name: zookeeper-persistent
   annotations:
     openshift.io/display-name: Zookeeper (Persistent)
     description: Create a replicated Zookeeper server with persistent storage
-    iconClass: icon-database
+    iconClass: fa fa-sitemap
     tags: database,zookeeper
   labels:
     template: zk-persistent
     component: zk
 parameters:
 - name: NAME
-  value: zk-persistent
+  value: zookeeper
   required: true
 - name: SOURCE_IMAGE
   description: Container image
-  value: zookeeper
+  value: lnquy/zookeeper
   required: true
 - name: ZOO_VERSION
   description: Version
@@ -24,15 +24,15 @@ parameters:
   required: true
 - name: ZOO_REPLICAS
   description: Number of nodes
-  value: "3"
+  value: "1"
   required: true
 - name: VOLUME_DATA_CAPACITY
   description: Persistent volume capacity for zookeeper dataDir directory (e.g. 512Mi, 2Gi)
-  value: 1Gi
+  value: 5Gi
   required: true
 - name: VOLUME_DATALOG_CAPACITY
   description: Persistent volume capacity for zookeeper dataLogDir directory (e.g. 512Mi, 2Gi)
-  value: 1Gi
+  value: 5Gi
   required: true
 - name: ZOO_TICK_TIME
   description: The number of milliseconds of each tick
@@ -72,23 +72,23 @@ parameters:
   required: true
 - name: ZOO_HEAP_SIZE
   description: JVM heap size
-  value: "-Xmx512M -Xms512M"
+  value: "-Xmx1024M -Xms1024M"
   required: true
 - name: RESOURCE_MEMORY_REQ
   description: The memory resource request.
-  value: "512M"
+  value: "1024M"
   required: true
 - name: RESOURCE_MEMORY_LIMIT
   description: The limits for memory resource.
-  value: "512M"
+  value: "1024M"
   required: true
 - name: RESOURCE_CPU_REQ
   description: The CPU resource request.
-  value: "300m"
+  value: "500m"
   required: true
 - name: RESOURCE_CPU_LIMIT
   description: The limits for CPU resource.
-  value: "300m"
+  value: "500m"
   required: true
 
 objects:
@@ -129,28 +129,28 @@ objects:
           zk-name: ${NAME}
           template: zk-persistent
           component: zk
-#  annotations:
-## Use this annotation if you want allocate each pod on different node
-## Note the number of nodes must be upper than REPLICAS parameter.
-#          scheduler.alpha.kubernetes.io/affinity: >
-#              {
-#                "podAntiAffinity": {
-#                  "requiredDuringSchedulingIgnoredDuringExecution": [{
-#                    "labelSelector": {
-#                      "matchExpressions": [{
-#                        "key": "zk-name",
-#                        "operator": "In",
-#                        "values": ["zk"]
-#                      }]
-#                    },
-#                    "topologyKey": "kubernetes.io/hostname"
-#                  }]
-#                }
-#              }
+        annotations:
+          ## Use this annotation if you want allocate each pod on different node
+          ## Note the number of nodes must be upper than REPLICAS parameter.
+          scheduler.alpha.kubernetes.io/affinity: >
+              {
+                "podAntiAffinity": {
+                  "requiredDuringSchedulingIgnoredDuringExecution": [{
+                    "labelSelector": {
+                      "matchExpressions": [{
+                        "key": "zk-name",
+                        "operator": "In",
+                        "values": ["zk"]
+                      }]
+                    },
+                    "topologyKey": "kubernetes.io/hostname"
+                  }]
+                }
+              }
       spec:
         containers:
         - name: ${NAME}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           image: ${SOURCE_IMAGE}:${ZOO_VERSION}
           resources:
             requests:
@@ -213,24 +213,27 @@ objects:
             mountPath: /opt/zookeeper/data
           - name: datalogdir
             mountPath: /opt/zookeeper/data-log
+        imagePullSecrets:
+          # TODO: Change or remove this
+          - name: mysecret
     volumeClaimTemplates:
     - metadata:
         name: datadir
       spec:
-        accessModes: [ "ReadWriteOnce" ]
+        accessModes: [ "ReadWriteMany" ]
+        storageClassName: zookeeper-storage
         resources:
           requests:
             storage: ${VOLUME_DATA_CAPACITY}
         selector:
-          component: zk
-          contents: data
+          name: zookeeper-data
     - metadata:
         name: datalogdir
       spec:
-        accessModes: [ "ReadWriteOnce" ]
+        accessModes: [ "ReadWriteMany" ]
+        storageClassName: zookeeper-storage
         resources:
           requests:
             storage: ${VOLUME_DATALOG_CAPACITY}
         selector:
-          component: zk
-          contents: datalog
+          name: zookeeper-datalog

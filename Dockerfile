@@ -1,10 +1,10 @@
 FROM openjdk:8-jre-alpine
 
-MAINTAINER Enrique Garcia <engapa@gmail.com>
+MAINTAINER Enrique Garcia <engapa@gmail.com>, Quy Le <lnquy.it@gmail.com>
 
 ARG ZOO_HOME=/opt/zookeeper
-ARG ZOO_USER=zookeeper
-ARG ZOO_GROUP=zookeeper
+ARG ZOO_USER=zk
+ARG ZOO_GROUP=zk
 ARG ZOO_VERSION="3.4.14"
 
 ENV ZOO_HOME=$ZOO_HOME \
@@ -35,9 +35,10 @@ RUN set -ex; \
 # Add custom scripts and configure user
 ADD zk_env.sh zk_setup.sh zk_status.sh $ZOO_HOME/bin/
 
+# Note: OS v3.11.51 default allow id in range [1000640000, 1000649999]
 RUN set -ex; \
     addgroup -S -g 1001 $ZOO_GROUP && \
-    adduser -h $ZOO_HOME -g "zookeeper" -u 1001 -D -S -G $ZOO_GROUP $ZOO_USER&& \
+    adduser -h $ZOO_HOME -g $ZOO_GROUP -u 1001 -D -S -G $ZOO_GROUP $ZOO_USER && \
     chown -R $ZOO_USER:$ZOO_GROUP $ZOO_HOME && \
     chmod a+x $ZOO_HOME/bin/* && \
     chmod -R a+w $ZOO_HOME && \
